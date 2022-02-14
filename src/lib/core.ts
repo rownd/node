@@ -1,12 +1,10 @@
-// import jwt from 'jsonwebtoken';
 import got from 'got';
 import NodeCache from 'node-cache';
-import jwksClient from 'jwks-rsa';
-import jwt from 'jsonwebtoken';
+// import jose from 'node-jose';
+import * as jose from 'jose'
+import { GetKeyFunction } from 'jose/dist/types/types';
 
 const cache = new NodeCache({ stdTTL: 3600 });
-
-let jwksClientInstance: any;
 
 type WellKnownConfig = {
     issuer: string;
@@ -41,29 +39,54 @@ export async function fetchRowndWellKnownConfig(apiUrl: string): Promise<WellKno
     return resp;
 }
 
-function fetchRowndJwk(header:any, callback: Function) {
-    jwksClientInstance.getSigningKey(header.kid, function(err: any, key: any) {
-        var signingKey = key.publicKey || key.rsaPublicKey;
-        callback(err, signingKey);
-      });
-}
-
-export async function validateToken(token: string, { config }: ValidateTokenOpts): Promise<jwt.JwtPayload | string | void> {
-    let authConfig = await fetchRowndWellKnownConfig(config.api_url);
-
-    if (!jwksClientInstance) {
-        jwksClientInstance = jwksClient({
-            jwksUri: authConfig.jwks_uri,
-        });
+async function fetchRowndJwks(jwksUrl: string): Promise<GetKeyFunction<jose.JWSHeaderParameters, jose.FlattenedJWSInput>> {
+    if (cache.has('jwks')) {
+        return jose.createLocalJWKSet(cache.get('jwks') as jose.JSONWebKeySet);
     }
 
-    return new Promise((resolve, reject) => {
-        jwt.verify(token, fetchRowndJwk, (err, decoded) => {
-            if (err) {
-                return reject(err);
-            }
+    let resp: jose.JSONWebKeySet = await got.get(jwksUrl).json();
+    cache.set('jwks', resp);
 
-            resolve(decoded);
-        });
-    });
+    return jose.createLocalJWKSet(resp);
+}
+
+export async function validateToken(token: string, { config }: ValidateTokenOpts): Promise<jose.JWTPayload | string | void> {
+    let authConfig = await fetchRowndWellKnownConfig(config.api_url);
+
+    let keystore = await fetchRowndJwks(authConfig.jwks_uri);
+
+    let verifyResp = await jose.jwtVerify(token, keystore);
+    return verifyResp.payload;
+}
+
+export async function fetchUserInfo(token: string, config: TConfig): Promise<any> {
+    let decodedToken = jose.decodeJwt(token);
+
+    if (!decodedToken.aud) {
+        throw new Error('No audience found in token. Is this a valid token?');
+    }
+
+    let appAudience = (decodedToken.aud as string[]).find(a => a.startsWith('app:'));
+
+    if (!appAudience) {
+        throw new Error('No app audience found in token. Is this a valid token?');
+    }
+
+    if (cache.has(`user:${decodedToken.sub}`)) {
+        return cache.get(`user:${decodedToken.sub}`) as any;
+    }
+
+    let app = appAudience.split(':')[1];
+
+    let userId = decodedToken['https://auth.rownd.io/app_user_id'];
+
+    let resp = await got.get(`${config.api_url}/applications/${app}/users/${userId}/data`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    }).json();
+
+    cache.set(`user:${decodedToken.sub}`, resp, 300);
+
+    return resp;
 }

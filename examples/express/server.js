@@ -1,9 +1,6 @@
 const express = require('express');
 const { rownd } = require('../../');
 
-console.log(rownd);
-console.log(rownd.express);
-
 const app = express();
 
 const { authenticate } = rownd.express;
@@ -12,11 +9,11 @@ app.get('/', (req, res) => {
     res.send('This is an unauthenticated route.');
 });
 
-app.get('/dashboard', authenticate, (req, res) => {
+app.get('/dashboard', authenticate(), (req, res) => {
     res.send({
         message: 'You are authenticated!',
         tokenObj: req.tokenObj,
-    }) 
+    });
 });
 
 app.use((err, req, res, next) => {
