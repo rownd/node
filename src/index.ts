@@ -11,7 +11,7 @@ export function instance(config?: TConfig) {
   return {
     validateToken,
     express: expressLib(config),
-  }
+  };
 }
 
 const defaultInstance = instance();

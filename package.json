@@ -58,9 +58,6 @@
   "dependencies": {
     "got": "^11.8.3",
     "jose": "^4.5.0",
-    "jsonwebtoken": "^8.5.1",
-    "jwks-rsa": "^2.0.5",
-    "node-cache": "^5.1.2",
-    "node-jose": "^2.1.0"
+    "node-cache": "^5.1.2"
   }
 }

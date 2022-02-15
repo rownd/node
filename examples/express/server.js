@@ -9,10 +9,11 @@ app.get('/', (req, res) => {
     res.send('This is an unauthenticated route.');
 });
 
-app.get('/dashboard', authenticate(), (req, res) => {
+app.get('/dashboard', authenticate({ fetchUserInfo: true }), (req, res) => {
     res.send({
         message: 'You are authenticated!',
         tokenObj: req.tokenObj,
+        user: req.user,
     });
 });
 

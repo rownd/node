@@ -1,12 +1,12 @@
 type TConfig = {
-    api_url: string;
-}
+  api_url: string;
+};
 
 type RowndToken = {
-    jti: string;
-    sub: string;
-    aud: string[];
-    iat: number;
-    exp: number;
-    iss: string;
-}
+  jti: string;
+  sub: string;
+  aud: string[];
+  iat: number;
+  exp: number;
+  iss: string;
+};
