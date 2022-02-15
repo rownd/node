@@ -11,13 +11,13 @@ npm i @rownd/node
 
 ## Supported frameworks
 
-- [Express](#framework-express)
+- [Express](#express)
 
 Don't see your framework of choice? Open an issue and request it, or contribute it via pull request!
 
 ## Usage
 
-### [Express]{#framework-express}
+### Express
 
 An `authenticate` function is provided for use as Express middleware.
 It takes the usual `req, res, next` arguments and will call `next()` if authentication
