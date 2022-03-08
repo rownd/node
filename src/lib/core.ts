@@ -1,4 +1,4 @@
-import got from 'got';
+import got from './got';
 import NodeCache from 'node-cache';
 import * as jose from 'jose';
 import { GetKeyFunction } from 'jose/dist/types/types';
@@ -64,13 +64,16 @@ export async function validateToken(
   let keystore = await fetchRowndJwks(authConfig.jwks_uri);
 
   let verifyResp = await jose.jwtVerify(token, keystore);
-  return verifyResp.payload;
+  const payload = verifyResp.payload;
+  payload.access_token = token;
+
+  return payload;
 }
 
 export async function fetchUserInfo(
   token: string,
   config: TConfig
-): Promise<any> {
+): Promise<Record<string, any>> {
   let decodedToken = jose.decodeJwt(token);
 
   if (!decodedToken.aud) {
@@ -93,7 +96,7 @@ export async function fetchUserInfo(
 
   let userId = decodedToken['https://auth.rownd.io/app_user_id'];
 
-  let resp = await got
+  let resp: Record<string, any> = await got
     .get(`${config.api_url}/applications/${app}/users/${userId}/data`, {
       headers: {
         Authorization: `Bearer ${token}`,

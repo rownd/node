@@ -5,19 +5,28 @@ import { JWTPayload } from 'jose';
 
 type AuthenticateOpts = {
   fetchUserInfo?: boolean;
+  errOnInvalidToken?: boolean;
 };
 
 type RowndRequest = express.Request & {
-  tokenObj: JWTPayload;
+  authenticated: boolean;
+  isAuthenticated: boolean;
+  tokenObj: TokenObj;
+  tokenInfo: TokenObj;
   user?: {
     [key: string]: any;
   };
 };
 
+type TokenObj = JWTPayload & {
+  access_token: string;
+}
+
 export default function expressLib(config: TConfig) {
   function authenticate(opts: AuthenticateOpts) {
     opts = {
       fetchUserInfo: false,
+      errOnInvalidToken: true,
       ...opts,
     };
 
@@ -26,6 +35,7 @@ export default function expressLib(config: TConfig) {
       _: express.Response,
       next: express.NextFunction
     ) => {
+      req.authenticated = req.isAuthenticated = false;
       let authHeader = req.get('authorization');
       authHeader = authHeader?.replace(/^bearer /i, '');
 
@@ -33,7 +43,7 @@ export default function expressLib(config: TConfig) {
         let err = new Error(
           'Missing or badly formatted authorization header. Expected: "Authorization: Bearer <token>"'
         );
-        return next(err);
+        return opts.errOnInvalidToken ? next(err) : next();
       }
 
       // Hide the async nature of this function from Express
@@ -44,7 +54,8 @@ export default function expressLib(config: TConfig) {
       ) => {
         try {
           let tokenObj = await validateToken(authHeader, { config });
-          req.tokenObj = tokenObj as JWTPayload;
+          req.tokenObj = req.tokenInfo = tokenObj as TokenObj;
+          req.authenticated = req.isAuthenticated = true;
 
           if (opts.fetchUserInfo) {
             let userInfo = await fetchUserInfo(authHeader, config);
@@ -58,25 +69,9 @@ export default function expressLib(config: TConfig) {
           );
           wrappingError.innerError = err as Error;
           wrappingError.statusCode = 401;
-          next(wrappingError);
+          opts.errOnInvalidToken ? next(wrappingError) : next();
         }
       })(req, _, next);
-
-      // validateToken(authHeader, { config })
-      //   .then(() => {
-      //     if (opts.fetchUserInfo) {
-      //       return fetchUserInfo(authHeader!, config);
-      //     }
-
-      //     return null;
-      //   })
-      //   .then(() => next())
-      //   .catch((err: any) => {
-      //     let wrappingError = new WrappedError(`The provided token was invalid. Reason: ${err.message}`);
-      //     wrappingError.innerError = err;
-      //     wrappingError.statusCode = 401;
-      //     next(wrappingError);
-      //   });
     };
   }
 

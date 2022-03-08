@@ -1,5 +1,6 @@
-import { validateToken } from './lib/core';
+import { validateToken, fetchUserInfo } from './lib/core';
 import expressLib from './express';
+
 
 const defaultConfig: TConfig = {
   api_url: 'https://api.rownd.io',
@@ -10,6 +11,7 @@ export function instance(config?: TConfig) {
 
   return {
     validateToken,
+    fetchUserInfo: (token: string) => fetchUserInfo(token, config!),
     express: expressLib(config),
   };
 }
