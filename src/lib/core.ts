@@ -3,8 +3,6 @@ import NodeCache from 'node-cache';
 import * as jose from 'jose';
 import { GetKeyFunction } from 'jose/dist/types/types';
 
-const cache = new NodeCache({ stdTTL: 3600 });
-
 type WellKnownConfig = {
   issuer: string;
   token_endpoint: string;
@@ -26,6 +24,12 @@ type WellKnownConfig = {
 type ValidateTokenOpts = {
   config: TConfig;
 };
+
+type TAppResp = {
+  app: TApp;
+};
+
+const cache = new NodeCache({ stdTTL: 3600 });
 
 export async function fetchRowndWellKnownConfig(
   apiUrl: string
@@ -71,40 +75,74 @@ export async function validateToken(
 }
 
 export async function fetchUserInfo(
-  token: string,
+  opts: FetchUserInfoOpts | string,
   config: TConfig
 ): Promise<Record<string, any>> {
-  let decodedToken = jose.decodeJwt(token);
+  let token = typeof opts === 'string' ? opts : opts.token;
 
-  if (!decodedToken.aud) {
-    throw new Error('No audience found in token. Is this a valid token?');
+  let appId = config._app?.id || typeof opts !== 'string' && opts.app_id;
+  let userId = typeof opts !== 'string' && opts.user_id;
+  let headers: Record<string, string> = {};
+
+  if (token) {
+    let decodedToken = jose.decodeJwt(token);
+
+    if (!decodedToken.aud) {
+      throw new Error('No audience found in token. Is this a valid token?');
+    }
+
+    let appAudience = (decodedToken.aud as string[]).find(a =>
+      a.startsWith('app:')
+    );
+
+    if (!appAudience) {
+      throw new Error('No app audience found in token. Is this a valid token?');
+    }
+
+    appId = appAudience.split(':')[1];
+    userId = decodedToken['https://auth.rownd.io/app_user_id'] as string;
+    headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    userId = typeof opts !== 'string' && opts.user_id;
+    headers['x-rownd-app-key'] = config.app_key!;
+    headers['x-rownd-app-secret'] = config.app_secret!;
   }
 
-  let appAudience = (decodedToken.aud as string[]).find(a =>
-    a.startsWith('app:')
-  );
-
-  if (!appAudience) {
-    throw new Error('No app audience found in token. Is this a valid token?');
+  if (cache.has(`user:${userId}`)) {
+    return cache.get(`user:${userId}`) as any;
   }
-
-  if (cache.has(`user:${decodedToken.sub}`)) {
-    return cache.get(`user:${decodedToken.sub}`) as any;
-  }
-
-  let app = appAudience.split(':')[1];
-
-  let userId = decodedToken['https://auth.rownd.io/app_user_id'];
 
   let resp: Record<string, any> = await got
-    .get(`${config.api_url}/applications/${app}/users/${userId}/data`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    .get(`${config.api_url}/applications/${appId}/users/${userId}/data`, {
+      headers,
     })
     .json();
 
-  cache.set(`user:${decodedToken.sub}`, resp, 300);
+  cache.set(`user:${userId}`, resp, 300);
+
+  return resp;
+}
+
+export async function fetchAppConfig(config: TConfig): Promise<TApp> {
+  let resp: TAppResp = await got.get(`${config.api_url}/hub/app-config`, {
+    headers: {
+      'x-rownd-app-key': config.app_key,
+    }
+  }).json();
+  return resp.app;
+}
+
+export async function createOrUpdateUser(user: RowndUser, config: TConfig): Promise<RowndUser> {
+  let resp: RowndUser = await got.put(`${config.api_url}/applications/${config._app!.id}/users/${user.id}/data`, {
+    headers: {
+      'x-rownd-app-key': config.app_key,
+      'x-rownd-app-secret': config.app_secret,
+      'content-type': 'application/json',
+  },
+    json: {
+      data: user.data,
+    }
+  }).json();
 
   return resp;
 }
