@@ -1,8 +1,7 @@
 import * as express from 'express';
 import { validateToken, fetchUserInfo } from '../lib/core';
 import { WrappedError } from '../errors';
-import { JWTPayload } from 'jose';
-import { TConfig } from '../types';
+import { TConfig, TTokenValidationPayload } from '../types';
 
 type AuthenticateOpts = {
   fetchUserInfo?: boolean;
@@ -12,15 +11,10 @@ type AuthenticateOpts = {
 type RowndRequest = express.Request & {
   authenticated: boolean;
   isAuthenticated: boolean;
-  tokenObj: TokenObj;
-  tokenInfo: TokenObj;
+  tokenInfo: TTokenValidationPayload;
   user?: {
     [key: string]: any;
   };
-};
-
-type TokenObj = JWTPayload & {
-  access_token: string;
 };
 
 export default function expressLib(config: TConfig) {
@@ -54,12 +48,15 @@ export default function expressLib(config: TConfig) {
         next: express.NextFunction
       ) => {
         try {
-          let tokenObj = await validateToken(authHeader, { config });
-          req.tokenObj = req.tokenInfo = tokenObj as TokenObj;
+          let tokenInfo = await validateToken(authHeader, { config });
+          req.tokenInfo = tokenInfo;
           req.authenticated = req.isAuthenticated = true;
 
           if (opts.fetchUserInfo) {
-            let userInfo = await fetchUserInfo(authHeader, config);
+            let userInfo = await fetchUserInfo(
+              { user_id: tokenInfo.user_id },
+              config
+            );
             req.user = userInfo.data;
           }
 

@@ -6,8 +6,8 @@ export type TConfig = {
 };
 
 export interface IRowndClient {
-  validateToken: (token: string) => Promise<TokenObj>;
-  fetchUserInfo: (token: string | FetchUserInfoOpts) => Promise<TUserInfo>;
+  validateToken: (token: string) => Promise<TTokenValidationPayload>;
+  fetchUserInfo: (token: FetchUserInfoOpts) => Promise<TUserInfo>;
   createOrUpdateUser: (user: TUser) => Promise<TUser>;
   createSmartLink: (opts: TCreateSmartLinkOpts) => Promise<TSmartLink>;
   express: IRowndExpressClient;
@@ -17,13 +17,21 @@ interface IRowndExpressClient {
   authenticate: (opts: AuthenticateOpts) => void;
 }
 
-type RowndToken = {
+type TTokenValidationPayload = {
+  decoded_token: RowndToken;
+  user_id: string;
+  access_token: string;
+};
+
+type RowndToken = JWTPayload & {
   jti: string;
   sub: string;
   aud: string[];
   iat: number;
   exp: number;
   iss: string;
+  'https://auth.rownd.io/app_user_id': string;
+  'https://auth.rownd.io/is_verified_user': boolean;
 };
 
 type TApp = {
@@ -33,8 +41,7 @@ type TApp = {
 };
 
 type FetchUserInfoOpts = {
-  token?: string;
-  user_id?: string;
+  user_id: string;
   app_id?: string;
 };
 

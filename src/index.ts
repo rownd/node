@@ -3,6 +3,8 @@ import {
   fetchUserInfo,
   fetchAppConfig,
   createOrUpdateUser,
+  CLAIM_USER_ID,
+  CLAIM_IS_VERIFIED_USER,
 } from './lib/core';
 import { createSmartLink } from './lib/smart_links';
 import expressLib from './express';
@@ -17,7 +19,12 @@ import { createConfig } from './lib/config';
 
 const defaultConfig = createConfig();
 
-export function createInstance(config?: TConfig): IRowndClient {
+const claims = {
+  CLAIM_USER_ID,
+  CLAIM_IS_VERIFIED_USER,
+};
+
+function createInstance(config?: TConfig): IRowndClient {
   const instConfig = { ...defaultConfig, ...config };
 
   if (instConfig.app_key) {
@@ -31,8 +38,7 @@ export function createInstance(config?: TConfig): IRowndClient {
   return {
     validateToken: (token: string) =>
       validateToken(token, { config: instConfig }),
-    fetchUserInfo: (opts: string | FetchUserInfoOpts) =>
-      fetchUserInfo(opts, instConfig),
+    fetchUserInfo: (opts: FetchUserInfoOpts) => fetchUserInfo(opts, instConfig),
     createOrUpdateUser: (user: RowndUser) =>
       createOrUpdateUser(user, instConfig),
     createSmartLink: (opts: CreateSmartLinkOpts) =>
@@ -41,6 +47,4 @@ export function createInstance(config?: TConfig): IRowndClient {
   };
 }
 
-const defaultInstance = createInstance();
-export default defaultInstance;
-export { defaultInstance as rownd };
+export { createInstance, claims };
