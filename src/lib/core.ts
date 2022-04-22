@@ -2,7 +2,14 @@ import got from './got';
 import NodeCache from 'node-cache';
 import * as jose from 'jose';
 import { GetKeyFunction } from 'jose/dist/types/types';
-import { FetchUserInfoOpts, RowndUser, TApp, TConfig } from '../types';
+import {
+  FetchUserInfoOpts,
+  RowndToken,
+  RowndUser,
+  TApp,
+  TConfig,
+  TTokenValidationPayload,
+} from '../types';
 
 type WellKnownConfig = {
   issuer: string;
@@ -21,6 +28,9 @@ type WellKnownConfig = {
   request_parameter_supported: boolean;
   request_object_signing_alg_values_supported: string[];
 };
+
+export const CLAIM_USER_ID = 'https://auth.rownd.io/app_user_id';
+export const CLAIM_IS_VERIFIED_USER = 'https://auth.rownd.io/is_verified_user';
 
 type ValidateTokenOpts = {
   config: TConfig;
@@ -63,51 +73,37 @@ async function fetchRowndJwks(
 export async function validateToken(
   token: string,
   { config }: ValidateTokenOpts
-): Promise<jose.JWTPayload | string | void> {
+): Promise<TTokenValidationPayload> {
   let authConfig = await fetchRowndWellKnownConfig(config.api_url);
 
   let keystore = await fetchRowndJwks(authConfig.jwks_uri);
 
   let verifyResp = await jose.jwtVerify(token, keystore);
-  const payload = verifyResp.payload;
-  payload.access_token = token;
+  const payload = verifyResp.payload as RowndToken;
 
-  return payload;
+  return {
+    decoded_token: payload,
+    user_id: payload[CLAIM_USER_ID],
+    access_token: token,
+  };
 }
 
 export async function fetchUserInfo(
-  opts: FetchUserInfoOpts | string,
+  opts: FetchUserInfoOpts,
   config: TConfig
 ): Promise<Record<string, any>> {
-  let token = typeof opts === 'string' ? opts : opts.token;
+  let appId = opts?.app_id || config._app?.id;
 
-  let appId = config._app?.id || (typeof opts !== 'string' && opts.app_id);
-  let userId = typeof opts !== 'string' && opts.user_id;
+  if (!appId) {
+    throw new Error('An app_id must be provided');
+  }
+
+  let userId = opts.user_id;
   let headers: Record<string, string> = {};
 
-  if (token) {
-    let decodedToken = jose.decodeJwt(token);
-
-    if (!decodedToken.aud) {
-      throw new Error('No audience found in token. Is this a valid token?');
-    }
-
-    let appAudience = (decodedToken.aud as string[]).find(a =>
-      a.startsWith('app:')
-    );
-
-    if (!appAudience) {
-      throw new Error('No app audience found in token. Is this a valid token?');
-    }
-
-    appId = appAudience.split(':')[1];
-    userId = decodedToken['https://auth.rownd.io/app_user_id'] as string;
-    headers['Authorization'] = `Bearer ${token}`;
-  } else {
-    userId = typeof opts !== 'string' && opts.user_id;
-    headers['x-rownd-app-key'] = config.app_key!;
-    headers['x-rownd-app-secret'] = config.app_secret!;
-  }
+  userId = opts.user_id;
+  headers['x-rownd-app-key'] = config.app_key!;
+  headers['x-rownd-app-secret'] = config.app_secret!;
 
   if (cache.has(`user:${userId}`)) {
     return cache.get(`user:${userId}`) as any;
