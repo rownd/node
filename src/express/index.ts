@@ -2,6 +2,7 @@ import * as express from 'express';
 import { validateToken, fetchUserInfo } from '../lib/core';
 import { WrappedError } from '../errors';
 import { JWTPayload } from 'jose';
+import { TConfig } from '../types';
 
 type AuthenticateOpts = {
   fetchUserInfo?: boolean;
@@ -20,7 +21,7 @@ type RowndRequest = express.Request & {
 
 type TokenObj = JWTPayload & {
   access_token: string;
-}
+};
 
 export default function expressLib(config: TConfig) {
   function authenticate(opts: AuthenticateOpts) {

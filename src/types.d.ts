@@ -1,9 +1,21 @@
-type TConfig = {
+export type TConfig = {
   api_url: string;
   app_key?: string;
   app_secret?: string;
   _app?: TApp;
 };
+
+export interface IRowndClient {
+  validateToken: (token: string) => Promise<TokenObj>;
+  fetchUserInfo: (token: string | FetchUserInfoOpts) => Promise<TUserInfo>;
+  createOrUpdateUser: (user: TUser) => Promise<TUser>;
+  createSmartLink: (opts: TCreateSmartLinkOpts) => Promise<TSmartLink>;
+  express: IRowndExpressClient;
+}
+
+interface IRowndExpressClient {
+  authenticate: (opts: AuthenticateOpts) => void;
+}
 
 type RowndToken = {
   jti: string;
@@ -36,7 +48,7 @@ interface CreateSmartLinkOpts {
 type SmartLink = {
   link: string;
   app_user_id: string;
-}
+};
 
 type RowndUser = {
   id: string;

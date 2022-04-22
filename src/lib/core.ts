@@ -2,6 +2,7 @@ import got from './got';
 import NodeCache from 'node-cache';
 import * as jose from 'jose';
 import { GetKeyFunction } from 'jose/dist/types/types';
+import { FetchUserInfoOpts, RowndUser, TApp, TConfig } from '../types';
 
 type WellKnownConfig = {
   issuer: string;
@@ -80,7 +81,7 @@ export async function fetchUserInfo(
 ): Promise<Record<string, any>> {
   let token = typeof opts === 'string' ? opts : opts.token;
 
-  let appId = config._app?.id || typeof opts !== 'string' && opts.app_id;
+  let appId = config._app?.id || (typeof opts !== 'string' && opts.app_id);
   let userId = typeof opts !== 'string' && opts.user_id;
   let headers: Record<string, string> = {};
 
@@ -124,25 +125,35 @@ export async function fetchUserInfo(
 }
 
 export async function fetchAppConfig(config: TConfig): Promise<TApp> {
-  let resp: TAppResp = await got.get(`${config.api_url}/hub/app-config`, {
-    headers: {
-      'x-rownd-app-key': config.app_key,
-    }
-  }).json();
+  let resp: TAppResp = await got
+    .get(`${config.api_url}/hub/app-config`, {
+      headers: {
+        'x-rownd-app-key': config.app_key,
+      },
+    })
+    .json();
   return resp.app;
 }
 
-export async function createOrUpdateUser(user: RowndUser, config: TConfig): Promise<RowndUser> {
-  let resp: RowndUser = await got.put(`${config.api_url}/applications/${config._app!.id}/users/${user.id}/data`, {
-    headers: {
-      'x-rownd-app-key': config.app_key,
-      'x-rownd-app-secret': config.app_secret,
-      'content-type': 'application/json',
-  },
-    json: {
-      data: user.data,
-    }
-  }).json();
+export async function createOrUpdateUser(
+  user: RowndUser,
+  config: TConfig
+): Promise<RowndUser> {
+  let resp: RowndUser = await got
+    .put(
+      `${config.api_url}/applications/${config._app!.id}/users/${user.id}/data`,
+      {
+        headers: {
+          'x-rownd-app-key': config.app_key,
+          'x-rownd-app-secret': config.app_secret,
+          'content-type': 'application/json',
+        },
+        json: {
+          data: user.data,
+        },
+      }
+    )
+    .json();
 
   return resp;
 }
