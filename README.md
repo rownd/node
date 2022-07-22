@@ -54,3 +54,34 @@ app.use('/protected-path', authenticate());
 The `authenticate()` function accepts an optional `options` object containing the following properties:
 - `fetchUserInfo: boolean (default: false)` - If `true`, the user's data will be fetched from the Rownd API and annotated on the request object as `req.user`. When present, it will contain a set of key/value pairs that match your application's schema. The user's data will be cached for a short period of time to speed up subsequent requests.
 - `errOnInvalidToken: boolean (default: true)` - When `true`, the an error will be passed to `next(err)` if the token fails to validate. When `false`, the token will still be validated, but `next()` will be called without an error. `req.isAuthenticated` will be `false` and `req.tokenInfo` will be `null`.
+
+### Vanilla JS
+
+The SDK exposes the following methods to help you validate user tokens, create or update user records, generate sign-in links, and so on.
+
+Here's a basic usage example:
+
+```js
+const Rownd = require('rownd');
+
+const rownd = Rownd.createInstance({
+  app_key: 'YOUR_ROWND_APP_KEY',
+  app_secret: 'YOUR_ROWND_APP_SECRET'
+});
+
+try {
+  // Receive a Rownd bearer token within your request headers (e.g., Authorization: Bearer <token>)
+  let token = headers['authorization'].replace(/^bearer /i, '');
+
+  let tokenInfo = await rownd.validateToken(token);
+  // Available properties: decoded_token, user_id, access_token (the same token you passed into `validateToken()`)
+
+  // If you want to grab the user's profile from Rownd
+  let userInfo = await fetchUserInfo({ user_id: tokenInfo.user_id });
+
+  console.log(userInfo.data); // Print user profile to console
+} catch (err) {
+  // Something went wrong--probably the token was invalid, expired, etc.
+}
+
+```
