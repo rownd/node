@@ -62,7 +62,7 @@ The SDK exposes the following methods to help you validate user tokens, create o
 Here's a basic usage example:
 
 ```js
-const Rownd = require('rownd');
+const Rownd = require("@rownd/node");
 
 const rownd = Rownd.createInstance({
   app_key: 'YOUR_ROWND_APP_KEY',
@@ -77,7 +77,7 @@ try {
   // Available properties: decoded_token, user_id, access_token (the same token you passed into `validateToken()`)
 
   // If you want to grab the user's profile from Rownd
-  let userInfo = await fetchUserInfo({ user_id: tokenInfo.user_id });
+  let userInfo = await rownd.fetchUserInfo({ user_id: tokenInfo.user_id });
 
   console.log(userInfo.data); // Print user profile to console
 } catch (err) {
