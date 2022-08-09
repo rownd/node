@@ -27,9 +27,10 @@ const claims = {
 
 function createInstance(config?: TConfig): IRowndClient {
   const instConfig = { ...defaultConfig, ...config };
+  var initHandle;
 
   if (instConfig.app_key) {
-    fetchAppConfig(instConfig)
+    initHandle = fetchAppConfig(instConfig)
       .then(app => (instConfig._app = app))
       .catch(err => {
         throw new Error(`Failed to fetch app config: ${err.message}`);
@@ -46,6 +47,7 @@ function createInstance(config?: TConfig): IRowndClient {
     createSmartLink: (opts: CreateSmartLinkOpts) =>
       createSmartLink(opts, instConfig),
     express: expressLib(instConfig),
+    appConfig: initHandle,
   };
 }
 

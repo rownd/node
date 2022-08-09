@@ -12,6 +12,7 @@ export interface IRowndClient {
   deleteUser: (userId: String) => Promise<void>;
   createSmartLink: (opts: TCreateSmartLinkOpts) => Promise<TSmartLink>;
   express: IRowndExpressClient;
+  appConfig: Promise<TApp> | undefined;
 }
 
 interface IRowndExpressClient {
