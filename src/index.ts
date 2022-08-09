@@ -5,6 +5,7 @@ import {
   createOrUpdateUser,
   CLAIM_USER_ID,
   CLAIM_IS_VERIFIED_USER,
+  deleteUser,
 } from './lib/core';
 import { createSmartLink } from './lib/smart_links';
 import expressLib from './express';
@@ -41,6 +42,7 @@ function createInstance(config?: TConfig): IRowndClient {
     fetchUserInfo: (opts: FetchUserInfoOpts) => fetchUserInfo(opts, instConfig),
     createOrUpdateUser: (user: RowndUser) =>
       createOrUpdateUser(user, instConfig),
+    deleteUser: (userId: String) => deleteUser(userId, instConfig),
     createSmartLink: (opts: CreateSmartLinkOpts) =>
       createSmartLink(opts, instConfig),
     express: expressLib(instConfig),

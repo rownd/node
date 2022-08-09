@@ -153,3 +153,14 @@ export async function createOrUpdateUser(
 
   return resp;
 }
+
+export async function deleteUser(userId: String, config: TConfig): Promise<void> {
+  await got.delete(`${config.api_url}/applications/${config._app!.id}/users/${userId}/data`,
+    {
+      headers: {
+        'x-rownd-app-key': config.app_key,
+        'x-rownd-app-secret': config.app_secret,
+        'content-type': 'application/json',
+      }
+    });
+}
