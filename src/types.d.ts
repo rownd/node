@@ -8,7 +8,7 @@ export type TConfig = {
 export interface IRowndClient {
   validateToken: (token: string) => Promise<TTokenValidationPayload>;
   fetchUserInfo: (token: FetchUserInfoOpts) => Promise<TUserInfo>;
-  createOrUpdateUser: (user: TUser) => Promise<TUser>;
+  createOrUpdateUser: (user: RowndUser) => Promise<RowndUser>;
   deleteUser: (userId: String) => Promise<void>;
   createSmartLink: (opts: TCreateSmartLinkOpts) => Promise<TSmartLink>;
   express: IRowndExpressClient;

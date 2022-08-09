@@ -17,6 +17,7 @@
     "test": "tsdx test",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
+    "release": "release-it",
     "size": "size-limit",
     "analyze": "size-limit --why"
   },
@@ -47,15 +48,41 @@
       "limit": "10 KB"
     }
   ],
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}"
+    },
+    "npm": {
+      "publish": true
+    },
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "angular"
+      }
+    }
+  },
   "devDependencies": {
+    "@commitlint/config-conventional": "^17.0.3",
+    "@release-it/conventional-changelog": "^5.0.0",
     "@size-limit/preset-small-lib": "^7.0.8",
     "@types/debug": "^4.1.7",
     "@types/express": "^4.17.13",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/lodash": "^4.14.179",
     "@types/node-jose": "^1.1.8",
+    "commitlint": "^17.0.3",
     "express": "^4.17.2",
     "husky": "^7.0.4",
+    "release-it": "^15.3.0",
     "size-limit": "^7.0.8",
     "tsdx": "^0.14.1",
     "tslib": "^2.3.1",

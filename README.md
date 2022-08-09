@@ -85,3 +85,90 @@ try {
 }
 
 ```
+
+## API reference
+
+Most methods return a Promise that will resolve with the result of the call or will reject (throw) if an error occurs, so you should be prepared to handle any errors.
+
+### Rownd.createInstance(opts)
+
+Creates a new instance of the Rownd client. It requires the following object properties as a single argument:
+- `app_key` - Your Rownd application key.
+- `app_secret` - Your Rownd application secret.
+
+Example:
+
+```js
+const rownd = Rownd.createInstance({
+    app_key: 'YOUR_ROWND_APP_KEY',
+    app_secret: 'YOUR_ROWND_APP_SECRET'
+})
+```
+
+Once you have an instance, you can use it to call various Rownd APIs or leverage supported frameworks.
+
+### instance.express
+Provides convenience handlers for the Express framework. See the usage section on Express for more information on how to use it.
+
+### instance.validateToken(token: string): Promise<TTokenValidationPayload>
+Validates a Rownd bearer token. Returns a promise that resolves to a token validation payload.
+
+In many cases, you'll retrieve a token from your REST API's `Authorization` header. Be sure to strip off the `Bearer ` portion of the header and just pass the raw token to this method.
+
+If the validation is successful, the resulting object will look approximately like this:
+
+```js
+{
+    decoded_token: {
+        "jti": "345b7a0f-1ab4-482b-99e7-4466b1cac0ad",
+        "aud": [
+            "app:290167281732813315",
+        ],
+        "sub": "rownd|61f3053251f2420069455976",
+        "iat": 1660056446,
+        "https://auth.rownd.io/app_user_id": "71f6ceeb-ee0a-4437-9b44-e6229defbab8",
+        "https://auth.rownd.io/is_verified_user": true,
+        "iss": "https://api.dev.rownd.io",
+        "exp": 1660060046
+    },
+    user_id: "71f6ceeb-ee0a-4437-9b44-e6229defbab8",
+    access_token: "eyJhbGciOiJ....EluFfu9Dg",
+}
+```
+
+### instance.fetchUserInfo(opts: TFetchUserInfoOpts): Promise<TUserInfo>
+Retrieves a user's profile from Rownd containing fields that match your Rownd application's schema.
+
+### instance.createOrUpdateUser(user: TUser): Promise<void>
+Creates or updates a user's profile in Rownd. The user object must contain an `id` property. If the user already exists, the existing profile will be updated. If the user does not exist, a new user/profile will be created.
+
+Example:
+
+```js
+instance.createOrUpdateUser({
+    id: '71f6ceeb-ee0a-4437-9b44-e6229defbab8',
+    data: {
+        first_name: 'Juliet',
+        email: 'juliet@rose.com'
+    }
+})
+```
+
+### instance.deleteUser(userId: String): Promise<void>
+Deletes a user and all associated data from Rownd.
+
+### instance.createSignInLink(opts: CreateSignInLinkOpts): Promise<string>
+
+Creates a sign-in "magic" link that will automatically sign in a user based on their email address, phone number, etc when they click the link.
+
+Example:
+
+```js
+let signInLink = await instance.createSignInLink({
+    redirect_url: 'https://example.com/dashboard',
+    email: 'juliet@rose.com',
+    data: {
+        first_name: 'Juliet',
+    }
+});
+```
