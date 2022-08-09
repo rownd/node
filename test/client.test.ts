@@ -31,13 +31,16 @@ describe('user profile handling', () => {
       user_id: 'mth-test-user-1',
     });
 
+    // Make sure the user has an email address
+    originalUser.data.email = 'testuser@rownd.app';
+
     try {
       const updatedUser = await client.createOrUpdateUser(originalUser);
 
       expect(updatedUser.data).toBeDefined();
     } catch (err) {
-      console.log(err as any);
-      fail(err.message);
+      var error: any = err;
+      fail(error.message + ': ' + error?.response?.body);
     }
   });
 
