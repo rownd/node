@@ -2,7 +2,7 @@ import { createInstance } from '../src';
 import { createConfig } from '../src/lib/config';
 import { TConfig } from '../src/types';
 
-const TOKEN: string = process.env.TOKEN as string;
+// const TOKEN: string = process.env.TOKEN as string;
 
 const testConfig: TConfig = createConfig({
   api_url: process.env.API_URL,
