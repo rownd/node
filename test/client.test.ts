@@ -36,7 +36,7 @@ describe('user profile handling', () => {
 
       expect(updatedUser.data).toBeDefined();
     } catch (err) {
-      console.log(err);
+      console.log(err as any);
       fail(err.message);
     }
   });
