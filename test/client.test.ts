@@ -30,9 +30,15 @@ describe('user profile handling', () => {
     const originalUser = await client.fetchUserInfo({
       user_id: 'mth-test-user-1',
     });
-    const updatedUser = await client.createOrUpdateUser(originalUser);
 
-    expect(updatedUser.data).toBeDefined();
+    try {
+      const updatedUser = await client.createOrUpdateUser(originalUser);
+
+      expect(updatedUser.data).toBeDefined();
+    } catch (err) {
+      console.log(err);
+      fail(err.message);
+    }
   });
 
   it('creates a login link', async () => {
