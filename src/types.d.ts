@@ -9,8 +9,10 @@ export interface IRowndClient {
   validateToken: (token: string) => Promise<TTokenValidationPayload>;
   fetchUserInfo: (token: FetchUserInfoOpts) => Promise<TUserInfo>;
   createOrUpdateUser: (user: TUser) => Promise<TUser>;
+  deleteUser: (userId: String) => Promise<void>;
   createSmartLink: (opts: TCreateSmartLinkOpts) => Promise<TSmartLink>;
   express: IRowndExpressClient;
+  appConfig: Promise<TApp> | undefined;
 }
 
 interface IRowndExpressClient {

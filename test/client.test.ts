@@ -2,7 +2,7 @@ import { createInstance } from '../src';
 import { createConfig } from '../src/lib/config';
 import { TConfig } from '../src/types';
 
-const TOKEN: string = process.env.TOKEN as string;
+// const TOKEN: string = process.env.TOKEN as string;
 
 const testConfig: TConfig = createConfig({
   api_url: process.env.API_URL,
@@ -13,10 +13,13 @@ const testConfig: TConfig = createConfig({
 const client = createInstance(testConfig);
 
 describe('user profile handling', () => {
-  it('validate a good token', async () => {
-    const tokenObj = await client.validateToken(TOKEN);
-    expect(tokenObj.user_id).toBeDefined();
+  beforeAll(() => {
+    return client.appConfig; // ensure app config has been fetched
   });
+  // it('validate a good token', async () => {
+  //   const tokenObj = await client.validateToken(TOKEN);
+  //   expect(tokenObj.user_id).toBeDefined();
+  // });
 
   it('fetches a user', async () => {
     const user = await client.fetchUserInfo({ user_id: 'mth-test-user-1' });
@@ -27,9 +30,18 @@ describe('user profile handling', () => {
     const originalUser = await client.fetchUserInfo({
       user_id: 'mth-test-user-1',
     });
-    const updatedUser = await client.createOrUpdateUser(originalUser);
 
-    expect(updatedUser.data).toBeDefined();
+    // Make sure the user has an email address
+    originalUser.data.email = 'testuser@rownd.app';
+
+    try {
+      const updatedUser = await client.createOrUpdateUser(originalUser);
+
+      expect(updatedUser.data).toBeDefined();
+    } catch (err) {
+      var error: any = err;
+      fail(error.message + ': ' + error?.response?.body);
+    }
   });
 
   it('creates a login link', async () => {
