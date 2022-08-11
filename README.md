@@ -145,7 +145,7 @@ Creates or updates a user's profile in Rownd. The user object must contain an `i
 Example:
 
 ```js
-instance.createOrUpdateUser({
+let user = await instance.createOrUpdateUser({
     id: '71f6ceeb-ee0a-4437-9b44-e6229defbab8',
     data: {
         first_name: 'Juliet',
