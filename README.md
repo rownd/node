@@ -96,6 +96,9 @@ Creates a new instance of the Rownd client. It requires the following object pro
 - `app_key` - Your Rownd application key.
 - `app_secret` - Your Rownd application secret.
 
+Optionally, you can also pass in the following properties:
+- `timeout` - The number of milliseconds to wait before timing out a request. Defaults to 10 seconds. If you're on a slow network and see any "Request timed out" errors, try increasing this value.
+
 Example:
 
 ```js

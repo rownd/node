@@ -59,7 +59,16 @@ export class RowndInstance implements IRowndClient {
   }
 
   async fetchUserInfo(opts: FetchUserInfoOpts) {
-    await this.initPromise; // Ensure we have the app config before fetching user info.
+    // Ensure we have the app config before fetching user info.
+    await Promise.race([
+      this.initPromise,
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Request timed out')),
+          this.config.timeout
+        )
+      ),
+    ]);
 
     let appId = opts?.app_id || this.config._app?.id;
 
@@ -92,7 +101,16 @@ export class RowndInstance implements IRowndClient {
   }
 
   async createOrUpdateUser(user: RowndUser) {
-    await this.initPromise; // Ensure we have the app config before fetching user info.
+    // Ensure we have the app config before fetching user info, but don't wait forever
+    await Promise.race([
+      this.initPromise,
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Request timed out')),
+          this.config.timeout
+        )
+      ),
+    ]);
 
     let resp: RowndUser = await got
       .put(
