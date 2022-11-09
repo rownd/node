@@ -1,7 +1,9 @@
 const express = require('express');
-const { rownd } = require('../../');
+const Rownd = require('../../');
 
 const app = express();
+
+const rownd = Rownd.createInstance();
 
 const { authenticate } = rownd.express;
 

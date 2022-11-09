@@ -22,9 +22,10 @@ export class RowndExpressClient implements IRowndExpressClient {
 
   constructor(rownd: RowndInstance) {
     this.rownd = rownd;
+    this.authenticate = this.authenticate.bind(this); // Hack to allow safe destructuring
   }
 
-  public authenticate(opts: AuthenticateOpts) {
+  authenticate (opts: AuthenticateOpts) {
     opts = {
       fetchUserInfo: false,
       errOnInvalidToken: true,
@@ -36,6 +37,7 @@ export class RowndExpressClient implements IRowndExpressClient {
       _: express.Response,
       next: express.NextFunction
     ) => {
+      const plugin = this;
       req.authenticated = req.isAuthenticated = false;
       let authHeader = req.get('authorization');
       authHeader = authHeader?.replace(/^bearer /i, '');
@@ -54,12 +56,12 @@ export class RowndExpressClient implements IRowndExpressClient {
         next: express.NextFunction
       ) => {
         try {
-          let tokenInfo = await this.rownd.validateToken(authHeader);
+          let tokenInfo = await plugin.rownd.validateToken(authHeader);
           req.tokenInfo = tokenInfo;
           req.authenticated = req.isAuthenticated = true;
 
           if (opts.fetchUserInfo) {
-            let userInfo = await this.rownd.fetchUserInfo({
+            let userInfo = await plugin.rownd.fetchUserInfo({
               user_id: tokenInfo.user_id,
             });
             req.user = userInfo.data;
