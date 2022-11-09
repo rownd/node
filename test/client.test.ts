@@ -1,34 +1,48 @@
 import { createInstance } from '../src';
-import { createConfig } from '../src/lib/config';
-import { TConfig } from '../src/types';
+import { generateTestToken, server } from './mocks';
 
 // const TOKEN: string = process.env.TOKEN as string;
 
-const testConfig: TConfig = createConfig({
-  api_url: process.env.API_URL,
-  app_key: process.env.APP_KEY,
-  app_secret: process.env.APP_SECRET,
-});
+const testConfig = {
+  api_url: 'https://mock-api.local',
+  app_key: 'node-test-app-key',
+  app_secret: 'node-test-app-secret',
+};
 
+// We're creating this instance before the mock server starts
+// in order to test that retrieving the app config will retry.
+// It will fail initially since the server isn't running until
+// after the client instance is instantiated.
 const client = createInstance(testConfig);
 
 describe('user profile handling', () => {
   beforeAll(() => {
-    return client.appConfig; // ensure app config has been fetched
+    server.listen();
   });
-  // it('validate a good token', async () => {
-  //   const tokenObj = await client.validateToken(TOKEN);
-  //   expect(tokenObj.user_id).toBeDefined();
-  // });
 
-  it('fetches a user', async () => {
-    const user = await client.fetchUserInfo({ user_id: 'mth-test-user-1' });
-    expect(user.data).toBeDefined();
+  beforeEach(() => {
+    server.resetHandlers();
   });
+
+  afterAll(() => {
+    server.close();
+    return new Promise(resolve => setTimeout(() => resolve(null), 100));
+  });
+
+  it('validate a good token', async () => {
+    const jwt = await generateTestToken();
+    const tokenObj = await client.validateToken(jwt);
+    expect(tokenObj.user_id).toBeDefined();
+  });
+
+  it('fetches a user before app config is ready', async () => {
+    const user = await client.fetchUserInfo({ user_id: 'rownd-test-user-1' });
+    expect(user.data).toBeDefined();
+  }, 20000); // set the test timeout to 20s to test retry logic, since the request will fire before the server is ready
 
   it('upserts a user', async () => {
     const originalUser = await client.fetchUserInfo({
-      user_id: 'mth-test-user-1',
+      user_id: 'rownd-test-user-1',
     });
 
     // Make sure the user has an email address

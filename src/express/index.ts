@@ -1,7 +1,7 @@
 import * as express from 'express';
-import { validateToken, fetchUserInfo } from '../lib/core';
 import { WrappedError } from '../errors';
-import { TConfig, TTokenValidationPayload } from '../types';
+import { IRowndExpressClient, TTokenValidationPayload } from '../types';
+import { RowndInstance } from '../lib/rownd';
 
 type AuthenticateOpts = {
   fetchUserInfo?: boolean;
@@ -17,8 +17,15 @@ type RowndRequest = express.Request & {
   };
 };
 
-export default function expressLib(config: TConfig) {
-  function authenticate(opts: AuthenticateOpts) {
+export class RowndExpressClient implements IRowndExpressClient {
+  private rownd: RowndInstance;
+
+  constructor(rownd: RowndInstance) {
+    this.rownd = rownd;
+    this.authenticate = this.authenticate.bind(this); // Hack to allow safe destructuring
+  }
+
+  authenticate(opts: AuthenticateOpts) {
     opts = {
       fetchUserInfo: false,
       errOnInvalidToken: true,
@@ -30,6 +37,7 @@ export default function expressLib(config: TConfig) {
       _: express.Response,
       next: express.NextFunction
     ) => {
+      const plugin = this;
       req.authenticated = req.isAuthenticated = false;
       let authHeader = req.get('authorization');
       authHeader = authHeader?.replace(/^bearer /i, '');
@@ -48,15 +56,14 @@ export default function expressLib(config: TConfig) {
         next: express.NextFunction
       ) => {
         try {
-          let tokenInfo = await validateToken(authHeader, { config });
+          let tokenInfo = await plugin.rownd.validateToken(authHeader);
           req.tokenInfo = tokenInfo;
           req.authenticated = req.isAuthenticated = true;
 
           if (opts.fetchUserInfo) {
-            let userInfo = await fetchUserInfo(
-              { user_id: tokenInfo.user_id },
-              config
-            );
+            let userInfo = await plugin.rownd.fetchUserInfo({
+              user_id: tokenInfo.user_id,
+            });
             req.user = userInfo.data;
           }
 
@@ -72,8 +79,4 @@ export default function expressLib(config: TConfig) {
       })(req, _, next);
     };
   }
-
-  return {
-    authenticate,
-  };
 }
