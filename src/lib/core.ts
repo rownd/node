@@ -2,9 +2,7 @@ import got from './got';
 import NodeCache from 'node-cache';
 import * as jose from 'jose';
 import { GetKeyFunction } from 'jose/dist/types/types';
-import {
-  TApp,
-} from '../types';
+import { TApp } from '../types';
 
 type WellKnownConfig = {
   issuer: string;
@@ -61,15 +59,18 @@ export async function fetchRowndJwks(
   return jose.createLocalJWKSet(resp);
 }
 
-export async function fetchAppConfig(apiUrl: string, appKey: string): Promise<TApp> {
+export async function fetchAppConfig(
+  apiUrl: string,
+  appKey: string
+): Promise<TApp> {
   let resp: TAppResp = await got
     .get(`${apiUrl}/hub/app-config`, {
       headers: {
-        'x-rownd-app-key': appKey
+        'x-rownd-app-key': appKey,
       },
       retry: {
-        limit: Infinity // retry forever so we hopefully don't leave the system in a bad state permanently
-      }
+        limit: Infinity, // retry forever so we hopefully don't leave the system in a bad state permanently
+      },
     })
     .json();
 

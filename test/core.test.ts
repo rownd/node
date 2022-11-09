@@ -32,8 +32,6 @@ describe('validate token', () => {
   });
 
   it('throws on expired token', async () => {
-    await expect(rowndInstance.validateToken(TOKEN)).rejects.toThrow(
-      Error
-    );
+    await expect(rowndInstance.validateToken(TOKEN)).rejects.toThrow(Error);
   });
 });

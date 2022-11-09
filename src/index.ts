@@ -1,11 +1,5 @@
-import {
-  CLAIM_USER_ID,
-  CLAIM_IS_VERIFIED_USER,
-} from './lib/core';
-import {
-  IRowndClient,
-  TConfig,
-} from './types';
+import { CLAIM_USER_ID, CLAIM_IS_VERIFIED_USER } from './lib/core';
+import { IRowndClient, TConfig } from './types';
 import { RowndInstance } from './lib/rownd';
 
 const claims = {
