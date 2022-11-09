@@ -2,6 +2,7 @@ export type TConfig = {
   api_url: string;
   app_key?: string;
   app_secret?: string;
+  app_id?: string;
   _app?: TApp;
 };
 
