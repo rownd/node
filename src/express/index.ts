@@ -25,7 +25,7 @@ export class RowndExpressClient implements IRowndExpressClient {
     this.authenticate = this.authenticate.bind(this); // Hack to allow safe destructuring
   }
 
-  authenticate (opts: AuthenticateOpts) {
+  authenticate(opts: AuthenticateOpts) {
     opts = {
       fetchUserInfo: false,
       errOnInvalidToken: true,
