@@ -70,7 +70,7 @@ export async function fetchAppConfig(
       },
       retry: {
         limit: Infinity, // retry forever so we hopefully don't leave the system in a bad state permanently
-      }
+      },
     })
     .json();
 

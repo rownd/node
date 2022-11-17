@@ -80,7 +80,9 @@ export class RowndExpressClient implements IRowndExpressClient {
           } catch (err) {
             if (opts.errOnMissingUser) {
               let wrappingError = new WrappedError(
-                `The user '${tokenInfo.user_id}' could not be retrieved. Reason: ${(err as Error).message}`
+                `The user '${
+                  tokenInfo.user_id
+                }' could not be retrieved. Reason: ${(err as Error).message}`
               );
               wrappingError.innerError = err as Error;
               wrappingError.statusCode = 404;

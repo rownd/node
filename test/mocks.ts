@@ -58,8 +58,7 @@ const appConfig = {
         required_retention: 'none',
         collection_justification:
           'We collect this data to personalize your Rownd experience. ',
-        opt_out_warning:
-          'We will not be able to call you by your first name. ',
+        opt_out_warning: 'We will not be able to call you by your first name. ',
         third_party_sharing: false,
       },
       last_name: {
@@ -217,9 +216,7 @@ const handlers = [
   }),
 
   rest.get('https://mock-api.local/hub/app-config', (_, res, ctx) => {
-    return res(
-      ctx.json(appConfig)
-    );
+    return res(ctx.json(appConfig));
   }),
 
   rest.get('https://mock-api-2.local/hub/app-config', async (_, res, ctx) => {
@@ -230,14 +227,9 @@ const handlers = [
       case 3:
       case 4:
         await require('timers/promises').setTimeout(2500);
-        return res(
-          ctx.status(500),
-          ctx.text('')
-        );
+        return res(ctx.status(500), ctx.text(''));
       default:
-        return res(
-          ctx.json(appConfig)
-        );
+        return res(ctx.json(appConfig));
     }
   }),
 
