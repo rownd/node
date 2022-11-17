@@ -1,10 +1,14 @@
 import got from 'got';
 import debugLib from 'debug';
 import { pick } from 'lodash';
+import { DEFAULT_API_USER_AGENT } from './constants';
 
 const debug = debugLib('rownd:got');
 
 const instance = got.extend({
+  headers: {
+    'user-agent': DEFAULT_API_USER_AGENT,
+  },
   hooks: {
     beforeRequest: [
       options => {

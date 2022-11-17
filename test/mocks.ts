@@ -2,6 +2,7 @@ import { setupServer } from 'msw/node';
 import { rest } from 'msw';
 import * as jose from 'jose';
 import { CLAIM_USER_ID } from '../src/lib/core';
+import * as timers from 'awaitable-timers';
 
 // Init JWK
 let keyPair: Promise<jose.GenerateKeyPairResult> = jose.generateKeyPair(
@@ -226,7 +227,7 @@ const handlers = [
       case 2:
       case 3:
       case 4:
-        await require('timers/promises').setTimeout(2500);
+        await timers.setTimeout(2500);
         return res(ctx.status(500), ctx.text(''));
       default:
         return res(ctx.json(appConfig));

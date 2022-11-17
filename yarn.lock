@@ -2311,6 +2311,11 @@
   "resolved" "https://registry.npmjs.org/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz"
   "version" "1.0.5"
 
+"awaitable-timers@^1.0.0":
+  "integrity" "sha512-ZZVaSfw/O5dycGhKUqIbc9sWBiUGV3vWcHzAhdtAyo/h33pCcld1elT7OEmoq0C2Lvztci3jhWqkpbXyCE/t0A=="
+  "resolved" "https://registry.npmjs.org/awaitable-timers/-/awaitable-timers-1.0.0.tgz"
+  "version" "1.0.0"
+
 "aws-sign2@~0.7.0":
   "integrity" "sha1-tG6JCTSpWR8tL2+G1+ap8bP+dqg="
   "resolved" "https://registry.npmjs.org/aws-sign2/-/aws-sign2-0.7.0.tgz"
