@@ -1,5 +1,6 @@
 import { fetchRowndWellKnownConfig } from '../src/lib/core';
 import { createInstance } from '../src';
+import { fetchAppConfig } from '../src/lib/core';
 import { IRowndClient } from '../src/types';
 import { server } from './mocks';
 
@@ -10,7 +11,7 @@ const testConfig = {
   api_url: 'https://mock-api.local',
 };
 
-describe('validate token', () => {
+describe('core tests', () => {
   let rowndInstance: IRowndClient;
   beforeAll(() => {
     server.listen();
@@ -26,12 +27,40 @@ describe('validate token', () => {
     return new Promise(resolve => setTimeout(() => resolve(null), 100));
   });
 
-  it('fetches well known config', async () => {
-    let resp = await fetchRowndWellKnownConfig(testConfig.api_url);
-    expect(resp).toBeDefined();
+  describe('resiliently fetch app config', () => {
+    it('fetches the app config', async () => {
+      const appConfig = await fetchAppConfig(
+        testConfig.api_url,
+        'test-app-key'
+      );
+      expect(appConfig).toBeDefined();
+      expect(appConfig.id).toBe('290167281732813315');
+    });
+
+    it('fetches the app config after retrying', async () => {
+      jest.setTimeout(30000);
+      try {
+        const appConfig = await fetchAppConfig(
+          'https://mock-api-2.local',
+          'test-app-key'
+        );
+        expect(appConfig).toBeDefined();
+        expect(appConfig.id).toBe('290167281732813315');
+      } catch (err) {
+        console.error(err);
+        fail('should not ever throw an error');
+      }
+    });
   });
 
-  it('throws on expired token', async () => {
-    await expect(rowndInstance.validateToken(TOKEN)).rejects.toThrow(Error);
+  describe('validate token', () => {
+    it('fetches well known config', async () => {
+      let resp = await fetchRowndWellKnownConfig(testConfig.api_url);
+      expect(resp).toBeDefined();
+    });
+
+    it('throws on expired token', async () => {
+      await expect(rowndInstance.validateToken(TOKEN)).rejects.toThrow(Error);
+    });
   });
 });

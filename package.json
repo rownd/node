@@ -13,8 +13,9 @@
   },
   "scripts": {
     "start": "tsdx watch",
+    "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
     "build": "tsdx build",
-    "test": "tsdx test",
+    "test": "tsdx test --collect-coverage",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
     "release": "release-it",
@@ -79,6 +80,7 @@
     "@types/jsonwebtoken": "^8.5.8",
     "@types/lodash": "^4.14.179",
     "@types/node-jose": "^1.1.8",
+    "awaitable-timers": "^1.0.0",
     "commitlint": "^17.0.3",
     "express": "^4.17.2",
     "husky": "^7.0.4",
@@ -91,7 +93,7 @@
   },
   "dependencies": {
     "debug": "^4.3.3",
-    "got": "^11.8.3",
+    "got": "^11.8.5",
     "jose": "^4.5.0",
     "lodash": "^4.17.21",
     "node-cache": "^5.1.2"
