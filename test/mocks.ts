@@ -28,6 +28,138 @@ export async function generateTestToken() {
   return jwt;
 }
 
+const appConfig = {
+  app: {
+    name: 'Rownd (dev)',
+    id: '290167281732813315',
+    schema: {
+      email: {
+        display_name: 'Email',
+        type: 'string',
+        data_category: 'pii_basic',
+        required: false,
+        owned_by: 'user',
+        user_visible: true,
+        revoke_after: '1 month',
+        required_retention: 'none',
+        collection_justification:
+          'This piece of personal data is needed to make your customer experience the best it can be.  We do not resell this data.',
+        opt_out_warning:
+          'By turning off your e-mail, your account will no longer work as designed.  You may not be able to log-in, get updates, or reset your password',
+      },
+      first_name: {
+        display_name: 'First name',
+        type: 'string',
+        data_category: 'pii_basic',
+        required: false,
+        owned_by: 'user',
+        user_visible: true,
+        revoke_after: '1 month',
+        required_retention: 'none',
+        collection_justification:
+          'We collect this data to personalize your Rownd experience. ',
+        opt_out_warning:
+          'We will not be able to call you by your first name. ',
+        third_party_sharing: false,
+      },
+      last_name: {
+        display_name: 'Last name',
+        type: 'string',
+        data_category: 'pii_basic',
+        required: false,
+        owned_by: 'user',
+        user_visible: true,
+        revoke_after: '1 month',
+        required_retention: 'none',
+        collection_justification: '',
+        opt_out_warning: '',
+      },
+      zip_code: {
+        display_name: 'Zip code',
+        type: 'string',
+        data_category: 'pii_basic',
+        required: false,
+        owned_by: 'user',
+        user_visible: true,
+        revoke_after: '1 month',
+        required_retention: 'none',
+        collection_justification: '',
+        opt_out_warning: '',
+      },
+      phone_number: {
+        display_name: 'Phone number',
+        type: 'string',
+        data_category: 'pii_basic',
+        required: false,
+        owned_by: 'user',
+        user_visible: true,
+        revoke_after: '1 month',
+        required_retention: 'none',
+        collection_justification:
+          'This piece of personal data is needed to make your customer experience the best it can be.  We do not resell this data.',
+      },
+      crypto_wallet_address: {
+        display_name: 'Wallet Address',
+        type: 'string',
+        data_category: 'custom',
+        required: false,
+        owned_by: 'app',
+        user_visible: false,
+        revoke_after: 'never',
+        required_retention: 'none',
+        collection_justification: '',
+        opt_out_warning: '',
+      },
+      google_id: {
+        display_name: 'Google ID',
+        type: 'string',
+        data_category: 'custom',
+        required: false,
+        owned_by: 'app',
+        user_visible: false,
+        revoke_after: 'never',
+        required_retention: 'none',
+        collection_justification: '',
+        opt_out_warning: '',
+      },
+    },
+    user_verification_field: 'email',
+    user_verification_fields: ['email', 'phone_number', 'google_id'],
+    icon: 'https://storage-dev.rownd.io/icon-app-290167281732813315',
+    config: {
+      hub: {
+        customizations: {
+          rounded_corners: true,
+          offset_y: 72,
+          visual_swoops: true,
+          blur_background: true,
+          dark_mode: 'disabled',
+        },
+        auth: {
+          audience: ['https://api.dev.rownd.io'],
+          sign_in_methods: {
+            email: { enabled: true },
+            phone: { enabled: true },
+            apple: { enabled: false, client_id: '' },
+            google: {
+              enabled: true,
+              client_id:
+                '437354109064-pmkrcopm4r88dm6jluf8av0ds06mps9k.apps.googleusercontent.com',
+              client_secret: '********',
+              ios_client_id: '',
+              scopes: [''],
+            },
+            crypto_wallet: { enabled: false },
+          },
+          show_app_icon: false,
+        },
+      },
+      content_gates: [],
+    },
+  },
+};
+
+let appConfigRetryCounter = 0;
 const handlers = [
   rest.get(
     'https://mock-api.local/hub/auth/.well-known/oauth-authorization-server',
@@ -86,137 +218,27 @@ const handlers = [
 
   rest.get('https://mock-api.local/hub/app-config', (_, res, ctx) => {
     return res(
-      ctx.json({
-        app: {
-          name: 'Rownd (dev)',
-          id: '290167281732813315',
-          schema: {
-            email: {
-              display_name: 'Email',
-              type: 'string',
-              data_category: 'pii_basic',
-              required: false,
-              owned_by: 'user',
-              user_visible: true,
-              revoke_after: '1 month',
-              required_retention: 'none',
-              collection_justification:
-                'This piece of personal data is needed to make your customer experience the best it can be.  We do not resell this data.',
-              opt_out_warning:
-                'By turning off your e-mail, your account will no longer work as designed.  You may not be able to log-in, get updates, or reset your password',
-            },
-            first_name: {
-              display_name: 'First name',
-              type: 'string',
-              data_category: 'pii_basic',
-              required: false,
-              owned_by: 'user',
-              user_visible: true,
-              revoke_after: '1 month',
-              required_retention: 'none',
-              collection_justification:
-                'We collect this data to personalize your Rownd experience. ',
-              opt_out_warning:
-                'We will not be able to call you by your first name. ',
-              third_party_sharing: false,
-            },
-            last_name: {
-              display_name: 'Last name',
-              type: 'string',
-              data_category: 'pii_basic',
-              required: false,
-              owned_by: 'user',
-              user_visible: true,
-              revoke_after: '1 month',
-              required_retention: 'none',
-              collection_justification: '',
-              opt_out_warning: '',
-            },
-            zip_code: {
-              display_name: 'Zip code',
-              type: 'string',
-              data_category: 'pii_basic',
-              required: false,
-              owned_by: 'user',
-              user_visible: true,
-              revoke_after: '1 month',
-              required_retention: 'none',
-              collection_justification: '',
-              opt_out_warning: '',
-            },
-            phone_number: {
-              display_name: 'Phone number',
-              type: 'string',
-              data_category: 'pii_basic',
-              required: false,
-              owned_by: 'user',
-              user_visible: true,
-              revoke_after: '1 month',
-              required_retention: 'none',
-              collection_justification:
-                'This piece of personal data is needed to make your customer experience the best it can be.  We do not resell this data.',
-            },
-            crypto_wallet_address: {
-              display_name: 'Wallet Address',
-              type: 'string',
-              data_category: 'custom',
-              required: false,
-              owned_by: 'app',
-              user_visible: false,
-              revoke_after: 'never',
-              required_retention: 'none',
-              collection_justification: '',
-              opt_out_warning: '',
-            },
-            google_id: {
-              display_name: 'Google ID',
-              type: 'string',
-              data_category: 'custom',
-              required: false,
-              owned_by: 'app',
-              user_visible: false,
-              revoke_after: 'never',
-              required_retention: 'none',
-              collection_justification: '',
-              opt_out_warning: '',
-            },
-          },
-          user_verification_field: 'email',
-          user_verification_fields: ['email', 'phone_number', 'google_id'],
-          icon: 'https://storage-dev.rownd.io/icon-app-290167281732813315',
-          config: {
-            hub: {
-              customizations: {
-                rounded_corners: true,
-                offset_y: 72,
-                visual_swoops: true,
-                blur_background: true,
-                dark_mode: 'disabled',
-              },
-              auth: {
-                audience: ['https://api.dev.rownd.io'],
-                sign_in_methods: {
-                  email: { enabled: true },
-                  phone: { enabled: true },
-                  apple: { enabled: false, client_id: '' },
-                  google: {
-                    enabled: true,
-                    client_id:
-                      '437354109064-pmkrcopm4r88dm6jluf8av0ds06mps9k.apps.googleusercontent.com',
-                    client_secret: '********',
-                    ios_client_id: '',
-                    scopes: [''],
-                  },
-                  crypto_wallet: { enabled: false },
-                },
-                show_app_icon: false,
-              },
-            },
-            content_gates: [],
-          },
-        },
-      })
+      ctx.json(appConfig)
     );
+  }),
+
+  rest.get('https://mock-api-2.local/hub/app-config', async (_, res, ctx) => {
+    appConfigRetryCounter++;
+    switch (appConfigRetryCounter) {
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        await require('timers/promises').setTimeout(2500);
+        return res(
+          ctx.status(500),
+          ctx.text('')
+        );
+      default:
+        return res(
+          ctx.json(appConfig)
+        );
+    }
   }),
 
   rest.get(

@@ -6,6 +6,7 @@ import { RowndInstance } from '../lib/rownd';
 type AuthenticateOpts = {
   fetchUserInfo?: boolean;
   errOnInvalidToken?: boolean;
+  errOnMissingUser?: boolean;
 };
 
 type RowndRequest = express.Request & {
@@ -29,6 +30,7 @@ export class RowndExpressClient implements IRowndExpressClient {
     opts = {
       fetchUserInfo: false,
       errOnInvalidToken: true,
+      errOnMissingUser: false,
       ...opts,
     };
 
@@ -55,27 +57,39 @@ export class RowndExpressClient implements IRowndExpressClient {
         _: express.Response,
         next: express.NextFunction
       ) => {
+        let tokenInfo;
         try {
-          let tokenInfo = await plugin.rownd.validateToken(authHeader);
+          tokenInfo = await plugin.rownd.validateToken(authHeader);
           req.tokenInfo = tokenInfo;
           req.authenticated = req.isAuthenticated = true;
-
-          if (opts.fetchUserInfo) {
-            let userInfo = await plugin.rownd.fetchUserInfo({
-              user_id: tokenInfo.user_id,
-            });
-            req.user = userInfo.data;
-          }
-
-          next();
         } catch (err) {
           let wrappingError = new WrappedError(
             `The provided token was invalid. Reason: ${(err as Error).message}`
           );
           wrappingError.innerError = err as Error;
           wrappingError.statusCode = 401;
-          opts.errOnInvalidToken ? next(wrappingError) : next();
+          return opts.errOnInvalidToken ? next(wrappingError) : next();
         }
+
+        if (opts.fetchUserInfo) {
+          try {
+            let userInfo = await plugin.rownd.fetchUserInfo({
+              user_id: tokenInfo.user_id,
+            });
+            req.user = userInfo.data;
+          } catch (err) {
+            if (opts.errOnMissingUser) {
+              let wrappingError = new WrappedError(
+                `The user '${tokenInfo.user_id}' could not be retrieved. Reason: ${(err as Error).message}`
+              );
+              wrappingError.innerError = err as Error;
+              wrappingError.statusCode = 404;
+              return next(wrappingError);
+            }
+          }
+        }
+
+        next();
       })(req, _, next);
     };
   }
