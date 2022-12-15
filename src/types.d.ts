@@ -46,6 +46,7 @@ type TApp = {
 type FetchUserInfoOpts = {
   user_id: string;
   app_id?: string;
+  access_token?: string;
 };
 
 interface CreateSmartLinkOpts {

@@ -5,6 +5,8 @@ import {
   fetchAppConfig,
   fetchRowndJwks,
   fetchRowndWellKnownConfig,
+  getRowndJwks,
+  initCacheLifecycle,
 } from './core';
 import { createSmartLink } from './smart_links';
 import {
@@ -34,6 +36,8 @@ export class RowndInstance implements IRowndClient {
   constructor(pConfig?: Partial<TConfig>) {
     this.config = createConfig(pConfig);
 
+    initCacheLifecycle(this.config);
+
     this.express = new RowndExpressClient(this);
 
     this.initPromise = fetchAppConfig(this.config.api_url, this.config.app_key!)
@@ -44,9 +48,7 @@ export class RowndInstance implements IRowndClient {
   }
 
   async validateToken(token: string) {
-    let authConfig = await fetchRowndWellKnownConfig(this.config.api_url);
-
-    let keystore = await fetchRowndJwks(authConfig.jwks_uri);
+    let keystore = await getRowndJwks();
 
     let verifyResp = await jose.jwtVerify(token, keystore);
     const payload = verifyResp.payload as RowndToken;
@@ -71,6 +73,17 @@ export class RowndInstance implements IRowndClient {
     ]);
 
     let appId = opts?.app_id || this.config._app?.id;
+
+    if (!appId && opts?.access_token) {
+      try {
+        const decodedToken = jose.decodeJwt(opts.access_token);
+        const appAudience = (decodedToken?.aud as string[])?.find((aud) => aud?.startsWith('app:'));
+
+        appId = appAudience?.split(':')[1] || void 0;
+      } catch (err) {
+        // log error
+      }
+    }
 
     if (!appId) {
       throw new Error('An app_id must be provided');
@@ -114,8 +127,7 @@ export class RowndInstance implements IRowndClient {
 
     let resp: RowndUser = await got
       .put(
-        `${this.config.api_url}/applications/${
-          this.config._app!.id
+        `${this.config.api_url}/applications/${this.config._app!.id
         }/users/${user.id || user.data.user_id}/data`,
         {
           headers: {
@@ -135,8 +147,7 @@ export class RowndInstance implements IRowndClient {
 
   async deleteUser(userId: String) {
     await got.delete(
-      `${this.config.api_url}/applications/${
-        this.config._app!.id
+      `${this.config.api_url}/applications/${this.config._app!.id
       }/users/${userId}/data`,
       {
         headers: {
