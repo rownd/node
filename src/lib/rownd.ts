@@ -3,8 +3,6 @@ import { createConfig } from './config';
 import {
   CLAIM_USER_ID,
   fetchAppConfig,
-  fetchRowndJwks,
-  fetchRowndWellKnownConfig,
   getRowndJwks,
   initCacheLifecycle,
 } from './core';

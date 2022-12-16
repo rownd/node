@@ -1,10 +1,13 @@
 import { createInstance } from '../src';
-import { generateTestToken, server } from './mocks';
+import { generateTestToken, getKeys, setupMockAppConfig, setupMockJwksApi, setupMockMagicLink, setupMockOauthConfig } from './mocks';
+import { _cache, CACHE_KEY_JWKS } from '../src/lib/core';
+import nock from 'nock';
+import * as jose from 'jose';
 
 // const TOKEN: string = process.env.TOKEN as string;
 
 const testConfig = {
-  api_url: 'https://mock-api.local',
+  api_url: 'http://api.mock.local',
   app_key: 'node-test-app-key',
   app_secret: 'node-test-app-secret',
 };
@@ -16,31 +19,34 @@ const testConfig = {
 const client = createInstance(testConfig);
 
 describe('user profile handling', () => {
-  beforeAll(() => {
-    server.listen();
-  });
-
   beforeEach(() => {
-    server.resetHandlers();
-  });
-
-  afterAll(() => {
-    server.close();
-    return new Promise(resolve => setTimeout(() => resolve(null), 100));
+    nock.cleanAll();
   });
 
   it('validate a good token', async () => {
+    let keys = await getKeys();
+    let jwk = await jose.exportJWK(keys.publicKey);
+    _cache.set(CACHE_KEY_JWKS, { keys: [jwk] });
+
     const jwt = await generateTestToken();
     const tokenObj = await client.validateToken(jwt);
     expect(tokenObj.user_id).toBeDefined();
   });
 
   it('fetches a user before app config is ready', async () => {
-    const user = await client.fetchUserInfo({ user_id: 'rownd-test-user-1' });
+    const client2 = createInstance(testConfig);
+    const userPromise = await client2.fetchUserInfo({ user_id: 'rownd-test-user-1' });
+
+    setupMockAppConfig();
+
+    const user = await userPromise;
     expect(user.data).toBeDefined();
   }, 20000); // set the test timeout to 20s to test retry logic, since the request will fire before the server is ready
 
   it('upserts a user', async () => {
+    setupMockAppConfig();
+    setupMockOauthConfig();
+    setupMockJwksApi();
     const originalUser = await client.fetchUserInfo({
       user_id: 'rownd-test-user-1',
     });
@@ -59,6 +65,7 @@ describe('user profile handling', () => {
   });
 
   it('creates a login link', async () => {
+    setupMockMagicLink();
     const link = await client.createSmartLink({
       email: 'someone@test.com',
       redirect_url: 'https://rownd.io',

@@ -22,8 +22,8 @@ type WellKnownConfig = {
   request_object_signing_alg_values_supported: string[];
 };
 
-const CACHE_KEY_OAUTH_CONFIG = 'oauth-config';
-const CACHE_KEY_JWKS = 'jwks';
+export const CACHE_KEY_OAUTH_CONFIG = 'oauth-config';
+export const CACHE_KEY_JWKS = 'jwks';
 export const CLAIM_USER_ID = 'https://auth.rownd.io/app_user_id';
 export const CLAIM_IS_VERIFIED_USER = 'https://auth.rownd.io/is_verified_user';
 
@@ -35,6 +35,8 @@ const cache = new NodeCache({
   stdTTL: 3600,
   deleteOnExpire: false,  // if refresh/updates fail, we want to keep oauth and jwk config around until it works again
 });
+
+export { cache as _cache };
 
 export async function initCacheLifecycle(config: TConfig): Promise<void> {
   // Initial fetch loop
@@ -78,7 +80,7 @@ export async function fetchRowndWellKnownConfig(
   return resp;
 }
 
-async function getRowndWellKnownConfig(): Promise<WellKnownConfig> {
+export async function getRowndWellKnownConfig(): Promise<WellKnownConfig> {
   if (cache.has(CACHE_KEY_OAUTH_CONFIG)) {
     return cache.get(CACHE_KEY_OAUTH_CONFIG) as WellKnownConfig;
   }
@@ -101,15 +103,10 @@ async function getRowndWellKnownConfig(): Promise<WellKnownConfig> {
 
 export async function fetchRowndJwks(): Promise<void> {
   const oauthConfig = await getRowndWellKnownConfig();
-  // if (cache.has('jwks') && (cache.getTtl('jwks') || 0) > Date.now()) {
-  //   return jose.createLocalJWKSet(cache.get('jwks') as jose.JSONWebKeySet);
-  // }
-
-  let jwkSet: GetKeyFunction<jose.JWSHeaderParameters, jose.FlattenedJWSInput>;
 
   try {
     let resp: jose.JSONWebKeySet = await got.get(oauthConfig.jwks_uri).json();
-    jwkSet = jose.createLocalJWKSet(resp);
+    jose.createLocalJWKSet(resp);
     cache.set('jwks', resp);
   } catch (err) {
     console.error('Failed fetching Rownd JWKset', err);

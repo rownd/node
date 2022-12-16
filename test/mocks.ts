@@ -1,5 +1,4 @@
-import { setupServer } from 'msw/node';
-import { rest } from 'msw';
+import nock from 'nock';
 import * as jose from 'jose';
 import { CLAIM_USER_ID } from '../src/lib/core';
 import * as timers from 'awaitable-timers';
@@ -28,6 +27,73 @@ export async function generateTestToken() {
 
   return jwt;
 }
+
+export const mockOauthConfig = {
+  "issuer": "http://api.mock.local",
+  "token_endpoint": "http://api.mock.local/hub/auth/token",
+  "jwks_uri": "http://api.mock.local/hub/auth/keys",
+  "userinfo_endpoint": "http://api.mock.local/me",
+  "response_types_supported": [
+    "token"
+  ],
+  "id_token_signing_alg_values_supported": [
+    "EdDSA"
+  ],
+  "grant_types_supported": [
+    "refresh_token"
+  ],
+  "subject_types_supported": [
+    "public"
+  ],
+  "scopes_supported": [],
+  "token_endpoint_auth_methods_supported": [
+    "none"
+  ],
+  "claims_supported": [
+    "ver",
+    "jti",
+    "iss",
+    "aud",
+    "iat",
+    "exp",
+    "cid",
+    "uid",
+    "scp",
+    "sub",
+    "https://auth.rownd.io/app_user_id",
+    "https://auth.rownd.io/jwt_type"
+  ],
+  "code_challenge_methods_supported": [
+    "S256"
+  ],
+  "introspection_endpoint_auth_methods_supported": [
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "none"
+  ],
+  "revocation_endpoint_auth_methods_supported": [
+    "none"
+  ],
+  "request_parameter_supported": true,
+  "request_object_signing_alg_values_supported": [
+    "EdDSA"
+  ]
+};
+
+export const mockJwks = {
+  "keys": [
+    {
+      "kty": "OKP",
+      "use": "sig",
+      "crv": "Ed25519",
+      "kid": "sig-1644859150",
+      "x": "5PH1vEwUonY7SeClX8RGMOVvCva3ZhzlVdkitFE5inU",
+      "alg": "EdDSA"
+    }
+  ]
+};
 
 const appConfig = {
   app: {
@@ -159,161 +225,149 @@ const appConfig = {
   },
 };
 
-let appConfigRetryCounter = 0;
-const handlers = [
-  rest.get(
-    'https://mock-api.local/hub/auth/.well-known/oauth-authorization-server',
-    (_, res, ctx) => {
-      return res(
-        ctx.json({
-          issuer: 'https://api.dev.rownd.io',
-          token_endpoint: 'https://mock-api.local/hub/auth/token',
-          jwks_uri: 'https://mock-api.local/hub/auth/keys',
-          userinfo_endpoint: 'https://mock-api.local/me',
-          response_types_supported: ['token'],
-          id_token_signing_alg_values_supported: ['EdDSA'],
-          grant_types_supported: ['refresh_token'],
-          subject_types_supported: ['public'],
-          scopes_supported: [],
-          token_endpoint_auth_methods_supported: ['none'],
-          claims_supported: [
-            'ver',
-            'jti',
-            'iss',
-            'aud',
-            'iat',
-            'exp',
-            'cid',
-            'uid',
-            'scp',
-            'sub',
-            'https://auth.rownd.io/app_user_id',
-            'https://auth.rownd.io/jwt_type',
-          ],
-          code_challenge_methods_supported: ['S256'],
-          introspection_endpoint_auth_methods_supported: [
-            'client_secret_basic',
-            'client_secret_post',
-            'client_secret_jwt',
-            'private_key_jwt',
-            'none',
-          ],
-          revocation_endpoint_auth_methods_supported: ['none'],
-          request_parameter_supported: true,
-          request_object_signing_alg_values_supported: ['EdDSA'],
-        })
-      );
-    }
-  ),
+export function setupMockOauthConfig(): nock.Scope {
+  return nock('http://api.mock.local')
+    .get('/hub/auth/.well-known/oauth-authorization-server')
+    .reply(200, mockOauthConfig);
+}
 
-  rest.get('https://mock-api.local/hub/auth/keys', async (_, res, ctx) => {
-    let keys = await getKeys();
-    let jwk = await jose.exportJWK(keys.publicKey);
-    return res(
-      ctx.json({
+export function setupMockJwksApi(): nock.Scope {
+  return nock('http://api.mock.local')
+    .get('/hub/auth/keys')
+    .reply(200, async () => {
+      let keys = await getKeys();
+      let jwk = await jose.exportJWK(keys.publicKey);
+      return {
         keys: [jwk],
-      })
-    );
-  }),
+      }
+    });
+}
 
-  rest.get('https://mock-api.local/hub/app-config', (_, res, ctx) => {
-    return res(ctx.json(appConfig));
-  }),
+export function setupMockMagicLink(): nock.Scope {
+  return nock('http://api.mock.local')
+    .post('/hub/auth/magic')
+    .reply(200, {
+      link: 'http://api.mock.local/hub/auth/magic/complete',
+      app_user_id: 'test-app-user-1',
+    });
+}
 
-  rest.get('https://mock-api-2.local/hub/app-config', async (_, res, ctx) => {
-    appConfigRetryCounter++;
-    switch (appConfigRetryCounter) {
-      case 1:
-      case 2:
-      case 3:
-      case 4:
+export function setupMockUserGet(userId: string = 'rownd-test-user-1'): nock.Scope {
+  return nock('http://api.mock.local')
+    .get(`/applications/290167281732813315/users/${userId}/data`)
+    .reply(200, {
+      data: {
+        email: 'juliet@rose.co',
+        user_id: 'rownd-test-user-1',
+        first_name: 'Juliet',
+        last_name: 'Rose',
+        phone_number: '+15555551212',
+        zip_code: '90210',
+      },
+      redacted: ['zip_code'],
+      revoke_after: {
+        zip_code: '2022-08-15T16:30:39.326Z',
+      },
+      retain_until: {
+        email: '2022-03-01T22:13:24.833Z',
+      },
+      meta: {
+        modified: '2022-11-08T04:09:20.828Z',
+        first_sign_in: '2022-10-25T18:04:18.503Z',
+        first_sign_in_method: 'token_refresh',
+        last_sign_in: '2022-11-09T02:55:19.464Z',
+        last_sign_in_method: 'token_refresh',
+      },
+      verified_data: {
+        email: 'mhamann@rownd.io',
+        phone_number: '+19192495211',
+      },
+    });
+}
+
+export function setupMockUserPut(userId: string = 'rownd-test-user-1'): nock.Scope {
+  return nock('http://api.mock.local')
+    .put(`/applications/290167281732813315/users/${userId}/data`)
+    .reply(200, {
+      data: {
+        email: 'testuser@rownd.app',
+        user_id: '71f6ceeb-ee0a-4437-9b44-e6229defbab8',
+        first_name: 'Juliet',
+        last_name: 'Rose',
+        phone_number: '+15555551212',
+        zip_code: '90210',
+      },
+      redacted: ['zip_code'],
+      revoke_after: {
+        zip_code: '2022-08-15T16:30:39.326Z',
+      },
+      retain_until: {
+        email: '2022-03-01T22:13:24.833Z',
+      },
+      meta: {
+        modified: '2022-11-08T04:09:20.828Z',
+        first_sign_in: '2022-10-25T18:04:18.503Z',
+        first_sign_in_method: 'token_refresh',
+        last_sign_in: '2022-11-09T02:55:19.464Z',
+        last_sign_in_method: 'token_refresh',
+      },
+      verified_data: {
+        email: 'mhamann@rownd.io',
+        phone_number: '+19192495211',
+      },
+    });
+
+}
+
+// let appConfigRetryCounter = 0;
+// const handlers = [
+
+//   rest.get('https://mock-api-2.local/hub/app-config', async (_, res, ctx) => {
+//     appConfigRetryCounter++;
+//     switch (appConfigRetryCounter) {
+//       case 1:
+//       case 2:
+//       case 3:
+//       case 4:
+//         await timers.setTimeout(2500);
+//         return res(ctx.status(500), ctx.text(''));
+//       default:
+//         return res(ctx.json(appConfig));
+//     }
+//   }),
+// ];
+
+export enum MockAppConfigResponseType {
+  Success,
+  DelayedServerError,
+  ServerError
+}
+
+export function setupMockAppConfig(respType: MockAppConfigResponseType = MockAppConfigResponseType.Success): nock.Scope {
+  let scope = nock('http://api.mock.local')
+    .get('/hub/app-config');
+
+  switch (respType) {
+    case MockAppConfigResponseType.DelayedServerError:
+      return scope.reply(500, async () => {
         await timers.setTimeout(2500);
-        return res(ctx.status(500), ctx.text(''));
-      default:
-        return res(ctx.json(appConfig));
-    }
-  }),
+        return {
+          error: 'server_error',
+          message: 'Server error',
+        }
+      });
 
-  rest.get(
-    'https://mock-api.local/applications/290167281732813315/users/rownd-test-user-1/data',
-    (_, res, ctx) => {
-      return res(
-        ctx.json({
-          data: {
-            email: 'juliet@rose.co',
-            user_id: 'rownd-test-user-1',
-            first_name: 'Juliet',
-            last_name: 'Rose',
-            phone_number: '+15555551212',
-            zip_code: '90210',
-          },
-          redacted: ['zip_code'],
-          revoke_after: {
-            zip_code: '2022-08-15T16:30:39.326Z',
-          },
-          retain_until: {
-            email: '2022-03-01T22:13:24.833Z',
-          },
-          meta: {
-            modified: '2022-11-08T04:09:20.828Z',
-            first_sign_in: '2022-10-25T18:04:18.503Z',
-            first_sign_in_method: 'token_refresh',
-            last_sign_in: '2022-11-09T02:55:19.464Z',
-            last_sign_in_method: 'token_refresh',
-          },
-          verified_data: {
-            email: 'mhamann@rownd.io',
-            phone_number: '+19192495211',
-          },
-        })
-      );
-    }
-  ),
+    case MockAppConfigResponseType.ServerError:
+      return scope.reply(500, {
+        error: 'server_error',
+        message: 'Server error',
+      });
 
-  rest.put(
-    'https://mock-api.local/applications/290167281732813315/users/rownd-test-user-1/data',
-    (_, res, ctx) => {
-      return res(
-        ctx.json({
-          data: {
-            email: 'testuser@rownd.app',
-            user_id: '71f6ceeb-ee0a-4437-9b44-e6229defbab8',
-            first_name: 'Juliet',
-            last_name: 'Rose',
-            phone_number: '+15555551212',
-            zip_code: '90210',
-          },
-          redacted: ['zip_code'],
-          revoke_after: {
-            zip_code: '2022-08-15T16:30:39.326Z',
-          },
-          retain_until: {
-            email: '2022-03-01T22:13:24.833Z',
-          },
-          meta: {
-            modified: '2022-11-08T04:09:20.828Z',
-            first_sign_in: '2022-10-25T18:04:18.503Z',
-            first_sign_in_method: 'token_refresh',
-            last_sign_in: '2022-11-09T02:55:19.464Z',
-            last_sign_in_method: 'token_refresh',
-          },
-          verified_data: {
-            email: 'mhamann@rownd.io',
-            phone_number: '+19192495211',
-          },
-        })
-      );
-    }
-  ),
+    case MockAppConfigResponseType.Success:
+    default:
+      return scope.reply(200, appConfig);
+  }
 
-  rest.post('https://mock-api.local/hub/auth/magic', (_, res, ctx) => {
-    return res(
-      ctx.json({
-        link: 'https://mock-api.local/hub/auth/magic/complete',
-        app_user_id: 'test-app-user-1',
-      })
-    );
-  }),
-];
 
-export const server = setupServer(...handlers);
+  // return scope;
+}
