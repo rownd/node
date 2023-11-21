@@ -7,6 +7,7 @@ type AuthenticateOpts = {
   fetchUserInfo?: boolean;
   errOnInvalidToken?: boolean;
   errOnMissingUser?: boolean;
+  setFullUserProfile?: boolean;
 };
 
 type RowndRequest = express.Request & {
@@ -31,6 +32,7 @@ export class RowndExpressClient implements IRowndExpressClient {
       fetchUserInfo: false,
       errOnInvalidToken: true,
       errOnMissingUser: false,
+      setFullUserProfile: false,
       ...opts,
     };
 
@@ -76,7 +78,11 @@ export class RowndExpressClient implements IRowndExpressClient {
             let userInfo = await plugin.rownd.fetchUserInfo({
               user_id: tokenInfo.user_id,
             });
-            req.user = userInfo.data;
+            if (opts.setFullUserProfile) {
+              req.user = userInfo;
+            } else {
+              req.user = userInfo.data;
+            }
           } catch (err) {
             if (opts.errOnMissingUser) {
               let wrappingError = new WrappedError(
