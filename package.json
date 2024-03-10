@@ -97,7 +97,7 @@
   "dependencies": {
     "debug": "^4.3.3",
     "got": "^11.8.5",
-    "jose": "^4.5.0",
+    "jose": "^4.15.5",
     "lodash": "^4.17.21",
     "node-cache": "^5.1.2"
   }
